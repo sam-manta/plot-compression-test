@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import glob
 import pandas as pd
-import math
 
 
 def read_file_content(filep):
@@ -14,6 +13,15 @@ def read_file_content(filep):
     # Convert all values in the DataFrame to numeric
     df = df.apply(pd.to_numeric)
     return df
+
+
+def read_data(filep):
+    dat_file = glob.glob(os.path.join(filep, "*.txt"))
+    content = pd.read_csv(dat_file[0], sep=";", decimal=".", skiprows=2, header=None)
+    content = content.squeeze()
+    h = content.mean()
+    print(h)
+    return h
 
 
 def plot_mm_vs_kn(mm, kn, title):
@@ -49,7 +57,7 @@ def plot_mm_vs_kn(mm, kn, title):
     plt.close()
 
 
-def plot_mm_vs_Fs(mm, kn, title):
+def plot_mm_vs_Fs(mm, kn, title, filep):
     # Convert mm and kN to float for plotting
     # [mm,kn] = filter_outliers(mm, kn)
     kn = -kn * 1.866
@@ -59,7 +67,7 @@ def plot_mm_vs_Fs(mm, kn, title):
     kn_int = kn - kn[0]
     integral = np.trapz(kn_int, mm_int)
     # Area can be taken from a separate file
-    h_cut = 75
+    h_cut = read_data(filep) * 10
     l = 150
     fracture_energy = integral / h_cut / l * 1000000  # (kN*mm/mm^2-> N/m)
 
@@ -76,14 +84,13 @@ def plot_mm_vs_Fs(mm, kn, title):
     plt.annotate(
         f"Max Value: {max_Force:.2f}",
         xy=(max_mm, max_Force),
-        xytext=(max_mm, max_Force - 0.5),
+        xytext=(max_mm, max_Force - 1),
         arrowprops=dict(
             facecolor="#7FCDBB", shrink=0.2, width=0.5, headwidth=5, edgecolor="#7FCDBB"
         ),
         fontsize=12,
     )
-    plt.annotate(f"Fracture energy: {fracture_energy:.2f} N/m", xy=(0.5, 5))
-    # Save the plot in PDF format
+    plt.annotate(f"Fracture energy: {fracture_energy:.2f} N/m", xy=(0.5, 3.5))
     # Save the plot in PDF format
     filename = f"{title}{'wedge.pdf'}"
     plt.savefig(filename, format="pdf")
@@ -106,4 +113,4 @@ for i in range(len(folders)):
     table_data = read_file_content(filep)
     print(table_data["Force"])
     #   plot_mm_vs_kn(table_data['CMOD'], table_data['Force'],title)
-    plot_mm_vs_Fs(table_data["CMOD"], table_data["Force"], title)
+    plot_mm_vs_Fs(table_data["CMOD"], table_data["Force"], title, filep)
